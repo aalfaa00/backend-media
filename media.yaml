@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-media-deploy
+spec:
+  selector:
+    matchLabels:
+      app: backend-media
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: backend-media
+    spec:
+      containers:
+      - name: backend-media-app
+        image: zeromaxinc/media-test:latest
+        ports:
+        - containerPort: 8002
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-media-svc
+  labels:
+    app: backend-media
+spec:
+  type: NodePort
+  ports:
+    - port: 8002
+      protocol: TCP
+  selector:
+    app: backend-media
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-reader
+  namespace: default
+rules:
+- apiGroups: [ "" ]
+  resources: [ "pods", "services"]
+  verbs: [ "get", "list", "watch"]
+- apiGroups: [ "extensions" ]
+  resources: [ "deployments" ]
+  verbs: [ "get", "list", "watch"]
+
+
+  
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default-pod-reader
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pod-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
